@@ -43,6 +43,14 @@ pub struct Args {
     #[arg(long)]
     pub skip_config_warning: bool,
 
+    /// Test the configuration file and exit.
+    ///
+    /// `cuprated` will check the configuration for correct syntax and valid values,
+    /// then print the configuration and exit successfully without starting.
+    /// If any errors occur, they will be logged and `cuprated` and exit with an error code.
+    #[arg(long)]
+    pub dry_run: bool,
+
     /// Print misc version information in JSON.
     #[arg(short, long)]
     pub version: bool,
@@ -63,6 +71,10 @@ impl Args {
         if self.generate_config {
             println!("{}", Config::documented_config());
             exit(0);
+        }
+
+        if self.dry_run {
+            todo!();
         }
     }
 
