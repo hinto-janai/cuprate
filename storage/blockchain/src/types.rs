@@ -285,8 +285,8 @@ pub struct Output {
     pub height: u32,
     /// Bit flags for this output.
     pub output_flags: OutputFlags,
-    /// The index of the transaction this output belongs to.
-    pub tx_idx: u64,
+    /// The local index of the transaction this output belongs to.
+    pub amount_index: u64,
 }
 
 //---------------------------------------------------------------------------------------------------- RctOutput

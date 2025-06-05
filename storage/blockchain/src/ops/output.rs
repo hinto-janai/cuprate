@@ -40,28 +40,27 @@ pub fn add_output(
 ) -> DbResult<PreRctOutputId> {
     // FIXME: this would be much better expressed with a
     // `btree_map::Entry`-like API, fix `trait DatabaseRw`.
-    let num_outputs = match tables.num_outputs().get(&amount) {
+    let amount_index = match tables.num_outputs().get(&amount) {
         // Entry with `amount` already exists.
-        Ok(num_outputs) => num_outputs,
+        Ok(t) => t + 1,
         // Entry with `amount` didn't exist, this is
         // the 1st output with this amount.
         Err(RuntimeError::KeyNotFound) => 0,
         Err(e) => return Err(e),
     };
     // Update the amount of outputs.
-    tables.num_outputs_mut().put(&amount, &(num_outputs + 1))?;
+    tables.num_outputs_mut().put(&amount, &amount_index)?;
 
     let pre_rct_output_id = PreRctOutputId {
         amount,
-        // The new `amount_index` is the length of amount of outputs with same amount.
-        amount_index: num_outputs,
+        amount_index,
     };
 
     let output = Output {
         key,
         height,
         output_flags,
-        tx_idx: num_outputs,
+        amount_index,
     };
 
     tables.outputs_mut().put(&pre_rct_output_id, &output)?;
@@ -178,7 +177,7 @@ pub fn output_to_output_on_chain(
         .output_flags
         .contains(OutputFlags::NON_ZERO_UNLOCK_TIME)
     {
-        u64_to_timelock(table_tx_unlock_time.get(&output.tx_idx)?)
+        u64_to_timelock(table_tx_unlock_time.get(&output.amount_index)?)
     } else {
         Timelock::None
     };
@@ -187,8 +186,8 @@ pub fn output_to_output_on_chain(
 
     let txid = if get_txid {
         let height = u32_to_usize(output.height);
-        let tx_idx = u64_to_usize(output.tx_idx);
-        let txid = if let Some(hash) = table_block_txs_hashes.get(&height)?.get(tx_idx) {
+        let amount_index = u64_to_usize(output.amount_index);
+        let txid = if let Some(hash) = table_block_txs_hashes.get(&height)?.get(amount_index) {
             *hash
         } else {
             let miner_tx_id = table_block_infos.get(&height)?.mining_tx_index;
@@ -326,7 +325,7 @@ mod test {
         key: [44; 32],
         height: 0,
         output_flags: OutputFlags::NON_ZERO_UNLOCK_TIME,
-        tx_idx: 0,
+        amount_index: 0,
     };
 
     /// Dummy `RctOutput`.

@@ -68,7 +68,7 @@ cuprate_database::define_tables! {
     /// For example, if there are 5 outputs with `amount = 123`
     /// then calling `get(123)` on this table will return 5.
     5 => NumOutputs,
-    Amount => u64,
+    Amount => AmountIndex,
 
     /// Pre-RCT output data.
     6 => Outputs,
