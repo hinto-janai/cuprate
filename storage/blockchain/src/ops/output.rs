@@ -25,12 +25,17 @@ use crate::{
 /// Upon [`Ok`], this function returns the [`PreRctOutputId`] that
 /// can be used to lookup the `Output` in [`get_output()`].
 ///
+/// [`Output::tx_idx`] does not matter, it will be overwritten
+/// with whatever index is correct at the time this function is called.
+///
 #[doc = doc_add_block_inner_invariant!()]
 #[doc = doc_error!()]
 #[inline]
 pub fn add_output(
     amount: Amount,
-    output: &Output,
+    key: [u8; 32],
+    height: u32,
+    output_flags: OutputFlags,
     tables: &mut impl TablesMut,
 ) -> DbResult<PreRctOutputId> {
     // FIXME: this would be much better expressed with a
@@ -52,7 +57,14 @@ pub fn add_output(
         amount_index: num_outputs,
     };
 
-    tables.outputs_mut().put(&pre_rct_output_id, output)?;
+    let output = Output {
+        key,
+        height,
+        output_flags,
+        tx_idx: num_outputs,
+    };
+
+    tables.outputs_mut().put(&pre_rct_output_id, &output)?;
     Ok(pre_rct_output_id)
 }
 
@@ -350,7 +362,14 @@ mod test {
         assert_eq!(get_rct_num_outputs(tables.rct_outputs()).unwrap(), 0);
 
         // Add outputs.
-        let pre_rct_output_id = add_output(AMOUNT, &OUTPUT, &mut tables).unwrap();
+        let pre_rct_output_id = add_output(
+            AMOUNT,
+            OUTPUT.key,
+            OUTPUT.height,
+            OUTPUT.output_flags,
+            &mut tables,
+        )
+        .unwrap();
         let amount_index = add_rct_output(&RCT_OUTPUT, tables.rct_outputs_mut()).unwrap();
 
         assert_eq!(

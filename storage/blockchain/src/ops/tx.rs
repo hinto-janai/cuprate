@@ -119,12 +119,9 @@ pub fn add_tx(
                 // Pre-RingCT outputs.
                 Ok(add_output(
                     output.amount.unwrap_or(0),
-                    &Output {
-                        key: output.key.0,
-                        height,
-                        output_flags,
-                        tx_idx: tx_id,
-                    },
+                    output.key.0,
+                    height,
+                    output_flags,
                     tables,
                 )?
                 .amount_index)
